@@ -27,6 +27,19 @@ public class ConcurrencyController {
         // process employees
         concurrencyService.processEmployeesWithThreadPool(employees);
 
+        // return updated salary
+        return employees.stream()
+                .map(emp -> new Employee(
+                        emp.getId(),
+                        emp.getName(),
+                        emp.getSalary(),
+                        emp.getJoiningDate(),
+                        emp.getRole(),
+                        emp.getProjectCompletion(),
+                        emp.getUpdatedSalary())
+                )
+                .collect(Collectors.toList());
+
     }
 
 }
