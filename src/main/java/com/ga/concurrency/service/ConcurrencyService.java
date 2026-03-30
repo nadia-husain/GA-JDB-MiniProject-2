@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -45,19 +46,36 @@ public class ConcurrencyService {
     }
 
     private void incrementSalary(Employee emp) {
-        double bonus = 0;
+        // role based bonus
+        double roleBonus = 0;
 
-        if (emp.getProjectCompletion() > 0.6) {
-            if (emp.getRole() == Role.Manager) {
-                bonus = emp.getSalary() * 0.20;
-            } else if (emp.getRole() == Role.Director) {
-                bonus = emp.getSalary() * 0.5;
-            } else {
-                bonus = emp.getSalary() * 0.10;
-            }
+        if (emp.getRole() == Role.Director) {
+            roleBonus = emp.getSalary() * 0.05;
+        } else if (emp.getRole() == Role.Manager) {
+            roleBonus = emp.getSalary() * 0.02;
+        } else {
+            roleBonus = emp.getSalary() * 0.01;
         }
+        emp.setRoleBonus(roleBonus);
 
-        double finalSalary = emp.getSalary() + bonus;
+        // year based bonus
+        LocalDate joiningDate = emp.getJoiningDate();
+        int yearsWorked = Period.between(joiningDate, LocalDate.now()).getYears();
+        double yearBonus = 0;
+
+        if (yearsWorked >= 1) {
+            yearBonus = emp.getSalary() * (0.02 * yearsWorked);
+        }
+        emp.setYearBonus(yearBonus);
+
+        // final salary calc
+        double finalSalary = 0;
+
+        if (emp.getProjectCompletion() >= 0.6) {
+            finalSalary = emp.getSalary() + roleBonus + yearBonus;
+        } else {
+            finalSalary = emp.getSalary();
+        }
 
         emp.setUpdatedSalary(finalSalary);
 
