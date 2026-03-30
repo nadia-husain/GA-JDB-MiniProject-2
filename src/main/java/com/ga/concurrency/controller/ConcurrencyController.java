@@ -21,8 +21,11 @@ public class ConcurrencyController {
     @GetMapping("/increment")
     public List<Employee> getProcessedSalaries() {
 
-        // Read employees
+        // read employees
         List<Employee> employees = concurrencyService.readEmployeesFromCSV("/Users/nadiahusain/jdb/projects/concurrency/src/main/resources/files/test_employees.csv");
+
+        // process employees
+        concurrencyService.processEmployeesWithThreadPool(employees);
 
     }
 
