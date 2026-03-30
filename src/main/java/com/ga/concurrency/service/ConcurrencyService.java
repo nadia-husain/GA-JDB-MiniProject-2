@@ -9,7 +9,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,6 +63,7 @@ public class ConcurrencyService {
             } else {
                 roleBonus = emp.getSalary() * 0.01;
             }
+
             emp.setRoleBonus(roleBonus);
 
             // year based bonus
@@ -74,6 +74,7 @@ public class ConcurrencyService {
             if (yearsWorked >= 1) {
                 yearBonus = emp.getSalary() * (0.02 * yearsWorked);
             }
+
             emp.setYearBonus(yearBonus);
 
             // final salary calc
@@ -144,5 +145,4 @@ public class ConcurrencyService {
             e.printStackTrace();
         }
     }
-
 }
