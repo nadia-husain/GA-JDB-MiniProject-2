@@ -11,10 +11,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -23,6 +20,7 @@ public class ConcurrencyService {
     private final ReentrantLock salaryLock = new ReentrantLock();
     // safely track processed employee count across threads
     private final AtomicInteger processedCount = new AtomicInteger(0);
+    private final Semaphore semaphore = new Semaphore(2);
 
     public List<Employee> readEmployeesFromCSV(String filePath) {
         // CopyOnWriteArrayList is thread-safe for concurrent reads/writes
@@ -101,12 +99,12 @@ public class ConcurrencyService {
     }
 
     public void processEmployeesWithThreadPool(List<Employee> employees) {
+        processedCount.set(0);
 
         ExecutorService fixedThreadPool = Executors.newFixedThreadPool(4);
 
         // Submit tasks for execution
         for (int i = 0; i < employees.size(); i++) {
-
             final int taskId = i + 1;
             final Employee emp = employees.get(i);
 
@@ -118,16 +116,22 @@ public class ConcurrencyService {
 
                 // Simulate processing time
                 try {
+                    semaphore.acquire();
                     Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
 
-                incrementSalary(emp);
+                    incrementSalary(emp);
 
-                System.out.println("Task " + taskId +
+                    System.out.println("Task " + taskId +
                         " finished for Employee: " + emp.getName() +
-                        " new salary = " + emp.getSalary());
+                        " | updated salary = " + emp.getUpdatedSalary());
+
+                } catch (InterruptedException e) {
+                    // restore the interrupted status instead of swallowing it
+                    Thread.currentThread().interrupt();
+                    System.err.println("Task " + taskId + " was interrupted.");
+                } finally {
+                    semaphore.release();
+                }
             });
         }
 
