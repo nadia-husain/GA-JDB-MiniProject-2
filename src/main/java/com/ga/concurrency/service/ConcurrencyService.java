@@ -14,9 +14,11 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class ConcurrencyService {
+    private final ReentrantLock salaryLock = new ReentrantLock();
 
     public List<Employee> readEmployeesFromCSV(String filePath) {
         List<Employee> employees = new ArrayList<>();
@@ -46,42 +48,48 @@ public class ConcurrencyService {
     }
 
     private void incrementSalary(Employee emp) {
-        // role based bonus
-        double roleBonus = 0;
+        salaryLock.lock();
 
-        if (emp.getRole() == Role.Director) {
-            roleBonus = emp.getSalary() * 0.05;
-        } else if (emp.getRole() == Role.Manager) {
-            roleBonus = emp.getSalary() * 0.02;
-        } else {
-            roleBonus = emp.getSalary() * 0.01;
+        try {
+            // role based bonus
+            double roleBonus = 0;
+
+            if (emp.getRole() == Role.Director) {
+                roleBonus = emp.getSalary() * 0.05;
+            } else if (emp.getRole() == Role.Manager) {
+                roleBonus = emp.getSalary() * 0.02;
+            } else {
+                roleBonus = emp.getSalary() * 0.01;
+            }
+            emp.setRoleBonus(roleBonus);
+
+            // year based bonus
+            LocalDate joiningDate = emp.getJoiningDate();
+            int yearsWorked = Period.between(joiningDate, LocalDate.now()).getYears();
+            double yearBonus = 0;
+
+            if (yearsWorked >= 1) {
+                yearBonus = emp.getSalary() * (0.02 * yearsWorked);
+            }
+            emp.setYearBonus(yearBonus);
+
+            // final salary calc
+            double finalSalary = 0;
+
+            if (emp.getProjectCompletion() >= 0.6) {
+                finalSalary = emp.getSalary() + roleBonus + yearBonus;
+            } else {
+                finalSalary = emp.getSalary();
+            }
+
+            emp.setUpdatedSalary(finalSalary);
+
+            System.out.println(Thread.currentThread().getName()
+                    + " processed " + emp.getName()
+                    + " final salary = " + finalSalary);
+        } finally {
+            salaryLock.unlock();
         }
-        emp.setRoleBonus(roleBonus);
-
-        // year based bonus
-        LocalDate joiningDate = emp.getJoiningDate();
-        int yearsWorked = Period.between(joiningDate, LocalDate.now()).getYears();
-        double yearBonus = 0;
-
-        if (yearsWorked >= 1) {
-            yearBonus = emp.getSalary() * (0.02 * yearsWorked);
-        }
-        emp.setYearBonus(yearBonus);
-
-        // final salary calc
-        double finalSalary = 0;
-
-        if (emp.getProjectCompletion() >= 0.6) {
-            finalSalary = emp.getSalary() + roleBonus + yearBonus;
-        } else {
-            finalSalary = emp.getSalary();
-        }
-
-        emp.setUpdatedSalary(finalSalary);
-
-        System.out.println(Thread.currentThread().getName()
-                + " processed " + emp.getName()
-                + " final salary = " + finalSalary);
     }
 
     public void processEmployeesWithThreadPool(List<Employee> employees) {
