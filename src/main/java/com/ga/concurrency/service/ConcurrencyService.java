@@ -50,9 +50,7 @@ public class ConcurrencyService {
     }
 
     private void incrementSalary(Employee emp) {
-        salaryLock.lock();
-
-        try {
+        synchronized (salaryLock) {
             // role based bonus
             double roleBonus = 0;
 
@@ -94,8 +92,6 @@ public class ConcurrencyService {
                     + " processed " + emp.getName()
                     + " final salary = " + finalSalary
                     + " | total processed = " + count);
-        } finally {
-            salaryLock.unlock();
         }
     }
 
